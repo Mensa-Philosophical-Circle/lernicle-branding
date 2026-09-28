@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { contrastRatio } from '../color';
 import { SCHOOL_THEMES, SCHOOL_THEME_IDS, getTheme, isSchoolThemeId } from '../themes';
 import { readableTextOn, themeVariables, THEME_VARIABLE_NAMES } from '../variables';
+import { UNBRANDED_TOKENS } from '../types';
 import type { ColorMode } from '../types';
 
 const MODES: ColorMode[] = ['light', 'dark'];
@@ -112,5 +113,29 @@ describe('theme variables', () => {
   it('picks the readable text colour rather than trusting the author', () => {
     expect(readableTextOn('#0B0B12')).toBe('#FFFFFF');
     expect(readableTextOn('#FBBF24')).toBe('#0B0B12');
+  });
+});
+
+describe('what a theme deliberately does not touch', () => {
+  // An error must still read as an error when the school's theme is amber,
+  // and chart series have to be told apart from each other before they are
+  // branded. Asserting it here stops someone quietly widening the theme.
+  it('never repaints the status or chart colours', () => {
+    const painted = new Set<string>(THEME_VARIABLE_NAMES);
+
+    UNBRANDED_TOKENS.forEach((token) => {
+      expect(painted.has(token), token).toBe(false);
+    });
+  });
+
+  it('leaves the page itself neutral for the brand to sit on', () => {
+    expect(THEME_VARIABLE_NAMES).not.toContain('--background');
+    expect(THEME_VARIABLE_NAMES).not.toContain('--card');
+  });
+
+  it('does brand the things a school expects to see branded', () => {
+    ['--primary', '--ring', '--sidebar-primary', '--sidebar-ring'].forEach(
+      (token) => expect(THEME_VARIABLE_NAMES).toContain(token),
+    );
   });
 });

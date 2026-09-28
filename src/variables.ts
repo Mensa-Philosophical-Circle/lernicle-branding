@@ -53,6 +53,7 @@ export function themeVariables(
     '--sidebar-primary-foreground': onPrimary,
     '--sidebar-accent': surface,
     '--sidebar-accent-foreground': onSurface,
+    '--sidebar-ring': primary,
   };
 }
 
