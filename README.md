@@ -8,10 +8,25 @@ theme is authored twice — once for light mode, once for dark — so a school's
 choice can never clash with the mode the viewer is in. A colour picker cannot
 make that promise, which is why there isn't one.
 
+## Installing it
+
+The portals depend on this by git tag, not a registry:
+
+```json
+"@lernicle/branding": "github:Mensa-Philosophical-Circle/lernicle-branding#v0.1.1"
+```
+
+GitHub Packages needs an auth token even for a public package, and all three
+portals build in Docker, so a registry would mean plumbing a secret into every
+Docker build. A public repo and a tag need none. npm builds the package on
+install, via the `prepare` script.
+
+To release a change: bump the version, tag it, and bump the tag in each portal.
+
 ## Using it
 
 ```ts
-import { applyTheme, watchColorMode, applyFavicon, applyTitle } from '@mensa-philosophical-circle/lernicle-branding';
+import { applyTheme, watchColorMode, applyFavicon, applyTitle } from '@lernicle/branding';
 
 applyTheme(branding.themeId, { colorFormat: 'hsl-triplet' });
 const stop = watchColorMode(branding.themeId, { colorFormat: 'hsl-triplet' });
