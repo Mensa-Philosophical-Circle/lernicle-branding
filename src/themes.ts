@@ -29,25 +29,25 @@ export const SCHOOL_THEMES: readonly SchoolTheme[] = [
   {
     id: 'blue',
     name: 'Blue',
-    light: { primary: '#2563EB', surface: '#EFF6FF', onSurface: '#1E40AF' },
+    light: { primary: '#1D4ED8', surface: '#EFF6FF', onSurface: '#1E40AF' },
     dark: { primary: '#60A5FA', surface: '#172554', onSurface: '#BFDBFE' },
   },
   {
     id: 'teal',
     name: 'Teal',
-    light: { primary: '#0F766E', surface: '#F0FDFA', onSurface: '#115E59' },
+    light: { primary: '#0B645D', surface: '#F0FDFA', onSurface: '#115E59' },
     dark: { primary: '#2DD4BF', surface: '#042F2E', onSurface: '#99F6E4' },
   },
   {
     id: 'emerald',
     name: 'Emerald',
-    light: { primary: '#047857', surface: '#ECFDF5', onSurface: '#065F46' },
+    light: { primary: '#03694C', surface: '#ECFDF5', onSurface: '#065F46' },
     dark: { primary: '#34D399', surface: '#022C22', onSurface: '#A7F3D0' },
   },
   {
     id: 'amber',
     name: 'Amber',
-    light: { primary: '#B45309', surface: '#FFFBEB', onSurface: '#92400E' },
+    light: { primary: '#A34A06', surface: '#FFFBEB', onSurface: '#92400E' },
     dark: { primary: '#FBBF24', surface: '#451A03', onSurface: '#FDE68A' },
   },
   {

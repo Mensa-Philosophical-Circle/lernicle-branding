@@ -112,7 +112,7 @@ describe('theme variables', () => {
   it('writes hex for themes whose CSS takes a colour value', () => {
     const variables = themeVariables(getTheme('blue')!, 'light', 'hex');
 
-    expect(variables['--primary']).toBe('#2563EB');
+    expect(variables['--primary']).toBe('#1D4ED8');
     expect(variables['--primary-foreground']).toBe('#FFFFFF');
   });
 
@@ -120,7 +120,7 @@ describe('theme variables', () => {
   it('writes an unitless triplet for themes whose CSS wraps it in hsl()', () => {
     const variables = themeVariables(getTheme('blue')!, 'light', 'hsl-triplet');
 
-    expect(variables['--primary']).toBe('221 83% 53%');
+    expect(variables['--primary']).toBe('224 76% 48%');
     expect(variables['--primary']).not.toContain('#');
   });
 
@@ -162,6 +162,43 @@ describe('a theme is the whole palette', () => {
           );
 
           expect(ratio, `${theme.id} ${mode} ${fg} on ${bg}`).toBeGreaterThanOrEqual(AA);
+        });
+      });
+    });
+  });
+
+  // Buttons fade on hover (`hover:bg-primary/90`, `/80` for secondary), which
+  // pulls the fill towards the page behind it. In light mode that lightens it
+  // under white text, so a fill that passes at rest could fail under the pointer.
+  it('keeps button text readable while hovered, in both modes', () => {
+    const blend = (top: string, alpha: number, under: string) => {
+      const channels = (hex: string) =>
+        [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+      const [a, b] = [channels(top), channels(under)];
+
+      return `#${a
+        .map((v, i) => Math.round(v * alpha + b[i] * (1 - alpha)).toString(16).padStart(2, '0'))
+        .join('')}`;
+    };
+    const HOVERS = [
+      ['--primary-foreground', '--primary', 0.9],
+      ['--destructive-foreground', '--destructive', 0.9],
+      ['--secondary-foreground', '--secondary', 0.8],
+    ] as const;
+
+    SCHOOL_THEMES.forEach((theme) => {
+      MODES.forEach((mode) => {
+        const palette = buildPalette(theme, mode);
+
+        HOVERS.forEach(([fg, bg, alpha]) => {
+          (['--background', '--card'] as const).forEach((surface) => {
+            const hovered = blend(palette[bg], alpha, palette[surface]);
+
+            expect(
+              contrastRatio(palette[fg], hovered),
+              `${theme.id} ${mode} ${fg} on hovered ${bg} over ${surface}`,
+            ).toBeGreaterThanOrEqual(AA);
+          });
         });
       });
     });
