@@ -1,7 +1,9 @@
 export {
+  DEFAULT_THEME_ID,
   SCHOOL_THEMES,
   SCHOOL_THEME_IDS,
   getTheme,
+  resolveTheme,
   isSchoolThemeId,
   type SchoolThemeId,
 } from './themes';

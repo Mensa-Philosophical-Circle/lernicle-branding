@@ -66,6 +66,13 @@ export const SCHOOL_THEMES: readonly SchoolTheme[] = [
 
 export type SchoolThemeId = (typeof SCHOOL_THEMES)[number]['id'];
 
+/**
+ * What a school that has not chosen a theme gets. It has to be a real theme:
+ * the portals' own fallback colours were not tuned for dark mode, and the
+ * three portals did not even agree on what the fallback was.
+ */
+export const DEFAULT_THEME_ID = 'violet';
+
 /** Every id, for validating what a client sends. */
 export const SCHOOL_THEME_IDS: readonly string[] = SCHOOL_THEMES.map(
   (theme) => theme.id,
@@ -75,6 +82,11 @@ export function getTheme(id: string | null | undefined): SchoolTheme | null {
   if (!id) return null;
 
   return SCHOOL_THEMES.find((theme) => theme.id === id) ?? null;
+}
+
+/** The theme a school actually sees: its own, or the default. */
+export function resolveTheme(id: string | null | undefined): SchoolTheme {
+  return getTheme(id) ?? getTheme(DEFAULT_THEME_ID)!;
 }
 
 export function isSchoolThemeId(id: unknown): id is SchoolThemeId {

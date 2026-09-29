@@ -1,5 +1,5 @@
-import { getTheme } from './themes';
-import { THEME_VARIABLE_NAMES, themeVariables } from './variables';
+import { resolveTheme } from './themes';
+import { themeVariables } from './variables';
 import type { ColorFormat, ColorMode } from './types';
 
 export interface ApplyThemeOptions {
@@ -20,26 +20,18 @@ export function currentColorMode(root?: HTMLElement): ColorMode {
 /**
  * Paints the school's theme onto the document for the mode being shown.
  *
- * An unknown or absent theme clears anything previously set rather than
- * substituting a colour, so a school that has chosen no theme simply keeps the
- * portal's own. Returns whether a theme was applied.
+ * A school that has chosen nothing, or whose theme no longer exists, gets the
+ * default theme rather than the portal's own fallback: those fallbacks were
+ * never tuned for dark mode and did not agree with each other.
  */
 export function applyTheme(
   themeId: string | null | undefined,
   options: ApplyThemeOptions,
-): boolean {
+): void {
   const root = options.root ?? globalThis.document?.documentElement;
-  if (!root) return false;
+  if (!root) return;
 
-  const theme = getTheme(themeId);
-
-  if (!theme) {
-    THEME_VARIABLE_NAMES.forEach((name) => root.style.removeProperty(name));
-    applyBrowserChrome(null);
-
-    return false;
-  }
-
+  const theme = resolveTheme(themeId);
   const mode = options.mode ?? currentColorMode(root);
   const variables = themeVariables(theme, mode, options.colorFormat);
 
@@ -48,8 +40,6 @@ export function applyTheme(
   });
 
   applyBrowserChrome(theme[mode].primary);
-
-  return true;
 }
 
 /**
@@ -57,20 +47,13 @@ export function applyTheme(
  * parent sees on a phone, and without this it stays the browser's own colour
  * however the school is branded. It follows the mode with everything else.
  */
-function applyBrowserChrome(color: string | null): void {
+function applyBrowserChrome(color: string): void {
   const doc = globalThis.document;
   if (!doc) return;
 
   const existing = doc.querySelector<HTMLMetaElement>(
     'meta[name="theme-color"]',
   );
-
-  if (!color) {
-    if (existing?.dataset.schoolThemeColor) existing.remove();
-
-    return;
-  }
-
   const meta = existing ?? doc.createElement('meta');
 
   if (!existing) {

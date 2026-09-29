@@ -2,7 +2,14 @@ import { describe, expect, it } from 'vitest';
 
 import { contrastRatio, readableTextOn, toHsl } from '../color';
 import { buildPalette } from '../palette';
-import { SCHOOL_THEMES, SCHOOL_THEME_IDS, getTheme, isSchoolThemeId } from '../themes';
+import {
+  DEFAULT_THEME_ID,
+  SCHOOL_THEMES,
+  SCHOOL_THEME_IDS,
+  getTheme,
+  isSchoolThemeId,
+  resolveTheme,
+} from '../themes';
 import { themeVariables, THEME_VARIABLE_NAMES } from '../variables';
 import type { ColorMode } from '../types';
 
@@ -69,6 +76,13 @@ describe('the school theme catalogue', () => {
       expect(theme.light.primary, theme.id).not.toBe(theme.dark.primary);
       expect(theme.light.surface, theme.id).not.toBe(theme.dark.surface);
     });
+  });
+
+  it('has a default that is a real theme in the catalogue', () => {
+    expect(getTheme(DEFAULT_THEME_ID)).not.toBeNull();
+    expect(resolveTheme(null).id).toBe(DEFAULT_THEME_ID);
+    expect(resolveTheme('chartreuse').id).toBe(DEFAULT_THEME_ID);
+    expect(resolveTheme('teal').id).toBe('teal');
   });
 
   it('looks up a theme by id and refuses anything else', () => {

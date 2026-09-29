@@ -8,6 +8,7 @@ import {
   watchColorMode,
 } from '../apply';
 import { THEME_VARIABLE_NAMES } from '../variables';
+import { DEFAULT_THEME_ID, getTheme } from '../themes';
 
 const root = () => document.documentElement;
 
@@ -20,30 +21,46 @@ beforeEach(() => {
 
 describe('applying a theme', () => {
   it('paints every variable the portal reads', () => {
-    expect(applyTheme('indigo', { colorFormat: 'hsl-triplet' })).toBe(true);
+    applyTheme('indigo', { colorFormat: 'hsl-triplet' });
 
     THEME_VARIABLE_NAMES.forEach((name) => {
       expect(root().style.getPropertyValue(name), name).not.toBe('');
     });
   });
 
-  // A school that has chosen nothing keeps the portal's own theme, rather
-  // than being forced to a default brand colour.
-  it("leaves the portal's own theme alone when no theme is chosen", () => {
-    expect(applyTheme(null, { colorFormat: 'hex' })).toBe(false);
-    expect(root().style.getPropertyValue('--primary')).toBe('');
+  // The portals' own fallbacks were not tuned for dark mode and disagreed
+  // with each other, so an unthemed school gets the default theme instead.
+  it('paints the default theme when the school has chosen none', () => {
+    applyTheme(null, { colorFormat: 'hex', mode: 'light' });
+
+    expect(root().style.getPropertyValue('--primary')).toBe(
+      getTheme(DEFAULT_THEME_ID)!.light.primary,
+    );
   });
 
-  it('clears a previous theme when the school unsets it', () => {
-    applyTheme('indigo', { colorFormat: 'hex' });
-    applyTheme(null, { colorFormat: 'hex' });
+  it('gives an unthemed school a dark mode that was designed for it', () => {
+    applyTheme(null, { colorFormat: 'hex', mode: 'dark' });
 
-    expect(root().style.getPropertyValue('--primary')).toBe('');
+    expect(root().style.getPropertyValue('--primary')).toBe(
+      getTheme(DEFAULT_THEME_ID)!.dark.primary,
+    );
   });
 
-  it('ignores a theme id it does not know', () => {
-    expect(applyTheme('chartreuse', { colorFormat: 'hex' })).toBe(false);
-    expect(root().style.getPropertyValue('--primary')).toBe('');
+  it('falls back to the default for a theme id it does not know', () => {
+    applyTheme('chartreuse', { colorFormat: 'hex', mode: 'light' });
+
+    expect(root().style.getPropertyValue('--primary')).toBe(
+      getTheme(DEFAULT_THEME_ID)!.light.primary,
+    );
+  });
+
+  it('returns to the default when a school unsets its theme', () => {
+    applyTheme('emerald', { colorFormat: 'hex', mode: 'light' });
+    applyTheme(null, { colorFormat: 'hex', mode: 'light' });
+
+    expect(root().style.getPropertyValue('--primary')).toBe(
+      getTheme(DEFAULT_THEME_ID)!.light.primary,
+    );
   });
 
   it('uses the dark values when the page is dark', () => {
