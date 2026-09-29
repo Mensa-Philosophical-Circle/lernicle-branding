@@ -11,16 +11,30 @@ import { getTheme } from '../themes';
 
 const root = () => document.documentElement;
 
-function deviceIsDark(dark: boolean) {
-  const listeners: Array<() => void> = [];
+/** A device whose dark setting can change, with real listener bookkeeping. */
+function device(initiallyDark: boolean) {
+  let dark = initiallyDark;
+  const listeners = new Set<() => void>();
 
   vi.stubGlobal('matchMedia', () => ({
-    matches: dark,
-    addEventListener: (_: string, fn: () => void) => listeners.push(fn),
-    removeEventListener: vi.fn(),
+    get matches() {
+      return dark;
+    },
+    addEventListener: (_: string, fn: () => void) => listeners.add(fn),
+    removeEventListener: (_: string, fn: () => void) => listeners.delete(fn),
   }));
 
-  return listeners;
+  return {
+    listeners,
+    goDark() {
+      dark = true;
+      listeners.forEach((fn) => fn());
+    },
+  };
+}
+
+function deviceIsDark(dark: boolean) {
+  return [...device(dark).listeners];
 }
 
 beforeEach(() => {
@@ -65,15 +79,26 @@ describe('a person choosing light or dark', () => {
   });
 
   it('keeps following the device when set to match it', () => {
-    const listeners = deviceIsDark(false);
+    const phone = device(false);
 
     applyColorModePreference('system');
     expect(root().classList.contains('dark')).toBe(false);
 
-    deviceIsDark(true);
-    listeners.forEach((fn) => fn());
+    phone.goDark();
 
     expect(root().classList.contains('dark')).toBe(true);
+  });
+
+  it('stops following the device once someone picks a mode', () => {
+    const phone = device(false);
+
+    applyColorModePreference('system');
+    setColorModePreference('light');
+    // The device goes dark; the person asked for light, so it stays light.
+    phone.goDark();
+
+    expect(root().classList.contains('dark')).toBe(false);
+    expect(phone.listeners.size).toBe(0);
   });
 
   // The whole point: switching mode repaints the school's theme with the

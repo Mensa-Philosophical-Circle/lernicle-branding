@@ -4,6 +4,13 @@ import type { ColorMode } from './types';
 export type ColorModePreference = 'light' | 'dark' | 'system';
 
 const STORAGE_KEY = 'lernicle-color-mode';
+
+/**
+ * Only one choice is ever in force. Without this, choosing "match my device"
+ * and then "dark" left the first one listening, and the device could flip the
+ * page back to light behind the person's back.
+ */
+let stopFollowingDevice: () => void = () => {};
 const DARK_QUERY = '(prefers-color-scheme: dark)';
 
 /**
@@ -51,6 +58,8 @@ function paint(mode: ColorMode): void {
 export function applyColorModePreference(
   preference: ColorModePreference = readColorModePreference(),
 ): () => void {
+  stopFollowingDevice();
+  stopFollowingDevice = () => {};
   paint(resolveColorMode(preference));
 
   if (preference !== 'system' || !globalThis.matchMedia) return () => {};
@@ -59,8 +68,9 @@ export function applyColorModePreference(
   const follow = () => paint(systemMode());
 
   query.addEventListener?.('change', follow);
+  stopFollowingDevice = () => query.removeEventListener?.('change', follow);
 
-  return () => query.removeEventListener?.('change', follow);
+  return stopFollowingDevice;
 }
 
 /** Remembers a person's choice on this device and applies it. */
