@@ -167,6 +167,28 @@ describe('a theme is the whole palette', () => {
     });
   });
 
+  // Status colours are used as text too ("Paid", "Overdue"), not only as fills.
+  // A mid green that carries white text perfectly well is barely legible as
+  // text on a white page, which is what the first version of this shipped.
+  it('keeps status and brand colours readable as text on every surface', () => {
+    SCHOOL_THEMES.forEach((theme) => {
+      MODES.forEach((mode) => {
+        const palette = buildPalette(theme, mode);
+
+        (['--primary', '--destructive', '--success', '--warning', '--info'] as const).forEach(
+          (token) => {
+            (['--background', '--card', '--muted'] as const).forEach((surface) => {
+              expect(
+                contrastRatio(palette[token], palette[surface]),
+                `${theme.id} ${mode} ${token} on ${surface}`,
+              ).toBeGreaterThanOrEqual(AA);
+            });
+          },
+        );
+      });
+    });
+  });
+
   it("gives the greys the school's own hue, not somebody else's", () => {
     const emerald = buildPalette(getTheme('emerald')!, 'light');
     const fuchsia = buildPalette(getTheme('fuchsia')!, 'light');

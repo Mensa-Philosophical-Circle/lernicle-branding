@@ -63,6 +63,35 @@ const STATUS = {
  */
 const RED_HUES = [0, 352, 8] as const;
 
+const AA = 4.5;
+
+/**
+ * A status colour is used two ways: as a fill with text on it (a badge, a
+ * button) and as text itself on the page ("Paid", "Overdue"). The second is
+ * the harder one — a mid green on white is barely legible — so the lightness
+ * is found per hue, moving away from the page until the colour reads at AA on
+ * every surface it sits on, in that mode.
+ */
+function readableStatus(
+  hue: number,
+  mode: ColorMode,
+  surfaces: string[],
+  startLightness: number,
+): string {
+  const { saturation } = STATUS[mode];
+  const step = mode === 'light' ? -1 : 1;
+
+  for (let lightness = startLightness; lightness >= 15 && lightness <= 90; lightness += step) {
+    const candidate = hslToHex(hue, saturation, lightness);
+    const readsOnPage = surfaces.every((surface) => contrastRatio(candidate, surface) >= AA);
+    const carriesText = contrastRatio(readableTextOn(candidate), candidate) >= AA;
+
+    if (readsOnPage && carriesText) return candidate;
+  }
+
+  return hslToHex(hue, saturation, startLightness);
+}
+
 /** Either a clearly different hue, or a clearly different lightness. */
 const MIN_HUE_GAP = 30;
 const MIN_CONTRAST_AGAINST_BRAND = 1.6;
@@ -90,13 +119,17 @@ function tellsApartFrom(brand: string, candidate: string): boolean {
  * rest — darker on a light page, lighter on a dark one, so the difference
  * reads either way.
  */
-function destructiveFor(primary: string, mode: ColorMode): string {
+function destructiveFor(
+  primary: string,
+  mode: ColorMode,
+  surfaces: string[],
+): string {
   const { saturation, lightness } = STATUS[mode];
 
   // Plain red first. It only moves when the school's own colour is close
   // enough that a delete button would not stand out.
   for (const hue of RED_HUES) {
-    const candidate = hslToHex(hue, saturation, lightness);
+    const candidate = readableStatus(hue, mode, surfaces, lightness);
 
     if (tellsApartFrom(primary, candidate)) return candidate;
   }
@@ -145,13 +178,11 @@ export function buildPalette(theme: SchoolTheme, mode: ColorMode) {
   const sidebar = grey(neutral.sidebar);
   const onPrimary = readableTextOn(anchors.primary);
 
-  const status = (hueForStatus: number) => {
-    const { saturation, lightness } = STATUS[mode];
+  const surfaces = [background, card, muted];
+  const status = (hueForStatus: number) =>
+    readableStatus(hueForStatus, mode, surfaces, STATUS[mode].lightness);
 
-    return hslToHex(hueForStatus, saturation, lightness);
-  };
-
-  const destructive = destructiveFor(anchors.primary, mode);
+  const destructive = destructiveFor(anchors.primary, mode, surfaces);
 
   const chart = (index: number) => {
     const { saturation, lightness } = CHART[mode];
