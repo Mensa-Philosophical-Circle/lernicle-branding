@@ -20,6 +20,14 @@ export {
 export { THEME_VARIABLE_NAMES, themeVariables } from './variables';
 
 export {
+  applyColorModePreference,
+  readColorModePreference,
+  resolveColorMode,
+  setColorModePreference,
+  type ColorModePreference,
+} from './mode';
+
+export {
   buildPalette,
   type PaletteToken,
   type ThemeVariables,
