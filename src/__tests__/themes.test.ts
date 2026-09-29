@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { contrastRatio } from '../color';
+import { contrastRatio, readableTextOn, toHsl } from '../color';
+import { buildPalette } from '../palette';
 import { SCHOOL_THEMES, SCHOOL_THEME_IDS, getTheme, isSchoolThemeId } from '../themes';
-import { readableTextOn, themeVariables, THEME_VARIABLE_NAMES } from '../variables';
-import { UNBRANDED_TOKENS } from '../types';
+import { themeVariables, THEME_VARIABLE_NAMES } from '../variables';
 import type { ColorMode } from '../types';
 
 const MODES: ColorMode[] = ['light', 'dark'];
@@ -116,26 +116,103 @@ describe('theme variables', () => {
   });
 });
 
-describe('what a theme deliberately does not touch', () => {
-  // An error must still read as an error when the school's theme is amber,
-  // and chart series have to be told apart from each other before they are
-  // branded. Asserting it here stops someone quietly widening the theme.
-  it('never repaints the status or chart colours', () => {
-    const painted = new Set<string>(THEME_VARIABLE_NAMES);
+describe('a theme is the whole palette', () => {
+  const PAIRS: [string, string][] = [
+    ['--foreground', '--background'],
+    ['--card-foreground', '--card'],
+    ['--popover-foreground', '--popover'],
+    ['--muted-foreground', '--muted'],
+    ['--primary-foreground', '--primary'],
+    ['--secondary-foreground', '--secondary'],
+    ['--accent-foreground', '--accent'],
+    ['--destructive-foreground', '--destructive'],
+    ['--success-foreground', '--success'],
+    ['--warning-foreground', '--warning'],
+    ['--info-foreground', '--info'],
+    ['--sidebar-foreground', '--sidebar'],
+    ['--sidebar-primary-foreground', '--sidebar-primary'],
+    ['--sidebar-accent-foreground', '--sidebar-accent'],
+  ];
 
-    UNBRANDED_TOKENS.forEach((token) => {
-      expect(painted.has(token), token).toBe(false);
+  // Branding covers every colour, so every pairing has to be readable — not
+  // just the brand ones.
+  it('keeps every foreground readable on its own surface, in both modes', () => {
+    SCHOOL_THEMES.forEach((theme) => {
+      MODES.forEach((mode) => {
+        const palette = buildPalette(theme, mode);
+
+        PAIRS.forEach(([fg, bg]) => {
+          const ratio = contrastRatio(
+            palette[fg as keyof typeof palette],
+            palette[bg as keyof typeof palette],
+          );
+
+          expect(ratio, `${theme.id} ${mode} ${fg} on ${bg}`).toBeGreaterThanOrEqual(AA);
+        });
+      });
     });
   });
 
-  it('leaves the page itself neutral for the brand to sit on', () => {
-    expect(THEME_VARIABLE_NAMES).not.toContain('--background');
-    expect(THEME_VARIABLE_NAMES).not.toContain('--card');
+  it("gives the greys the school's own hue, not somebody else's", () => {
+    const emerald = buildPalette(getTheme('emerald')!, 'light');
+    const rose = buildPalette(getTheme('rose')!, 'light');
+
+    expect(emerald['--border']).not.toBe(rose['--border']);
+    expect(emerald['--muted']).not.toBe(rose['--muted']);
+    expect(emerald['--sidebar']).not.toBe(rose['--sidebar']);
   });
 
-  it('does brand the things a school expects to see branded', () => {
-    ['--primary', '--ring', '--sidebar-primary', '--sidebar-ring'].forEach(
-      (token) => expect(THEME_VARIABLE_NAMES).toContain(token),
+  // An error must still read as an error when the school's theme is amber.
+  it('keeps the status colours telling different stories', () => {
+    SCHOOL_THEMES.forEach((theme) => {
+      MODES.forEach((mode) => {
+        const palette = buildPalette(theme, mode);
+        const statuses = [
+          palette['--destructive'],
+          palette['--success'],
+          palette['--warning'],
+          palette['--info'],
+        ];
+
+        expect(new Set(statuses).size, `${theme.id} ${mode}`).toBe(4);
+      });
+    });
+  });
+
+  it('keeps an error red whichever theme the school picked', () => {
+    SCHOOL_THEMES.forEach((theme) => {
+      const { h } = toHsl(buildPalette(theme, 'light')['--destructive']);
+
+      expect(h <= 15 || h >= 345, `${theme.id}`).toBe(true);
+    });
+  });
+
+  // Five series that cannot be told apart are not a chart.
+  it('gives charts five distinguishable series', () => {
+    SCHOOL_THEMES.forEach((theme) => {
+      MODES.forEach((mode) => {
+        const palette = buildPalette(theme, mode);
+        const hues = [1, 2, 3, 4, 5].map(
+          (n) => toHsl(palette[`--chart-${n}` as keyof typeof palette]).h,
+        );
+
+        expect(new Set(hues).size, `${theme.id} ${mode}`).toBe(5);
+      });
+    });
+  });
+
+  it('covers every token the portals define', () => {
+    const required = [
+      '--background', '--foreground', '--card', '--popover',
+      '--primary', '--secondary', '--muted', '--accent',
+      '--destructive', '--success', '--warning', '--info',
+      '--border', '--input', '--ring',
+      '--chart-1', '--chart-5',
+      '--sidebar', '--sidebar-background', '--sidebar-border', '--sidebar-ring',
+    ];
+
+    required.forEach((token) =>
+      expect(THEME_VARIABLE_NAMES, token).toContain(token),
     );
   });
 });

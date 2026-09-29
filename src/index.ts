@@ -15,7 +15,13 @@ export {
   type ApplyThemeOptions,
 } from './apply';
 
-export { THEME_VARIABLE_NAMES, readableTextOn, themeVariables } from './variables';
+export { THEME_VARIABLE_NAMES, themeVariables } from './variables';
+
+export {
+  buildPalette,
+  type PaletteToken,
+  type ThemeVariables,
+} from './palette';
 
 export {
   normalizeBrandingAssets,
@@ -24,9 +30,15 @@ export {
   writeCachedBranding,
 } from './assets';
 
-export { contrastRatio, normalizeHex, toHslTriplet, toRgb } from './color';
-
-export { UNBRANDED_TOKENS } from './types';
+export {
+  contrastRatio,
+  hslToHex,
+  normalizeHex,
+  readableTextOn,
+  toHsl,
+  toHslTriplet,
+  toRgb,
+} from './color';
 
 export type {
   ColorFormat,
@@ -34,5 +46,4 @@ export type {
   SchoolBranding,
   SchoolTheme,
   ThemeModeColors,
-  ThemeVariables,
 } from './types';

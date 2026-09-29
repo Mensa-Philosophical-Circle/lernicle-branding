@@ -64,6 +64,32 @@ export function toHslTriplet(hex: string): string {
   )}%`;
 }
 
+/** Hue, saturation and lightness of a colour, for deriving a palette from it. */
+export function toHsl(hex: string): { h: number; s: number; l: number } {
+  const [h, s, l] = toHslTriplet(hex)
+    .replace(/%/g, '')
+    .split(' ')
+    .map(Number);
+
+  return { h, s, l };
+}
+
+/** The inverse of `toHslTriplet`, so a derived colour can be written as hex. */
+export function hslToHex(hue: number, saturation: number, lightness: number): string {
+  const s = Math.min(100, Math.max(0, saturation)) / 100;
+  const l = Math.min(100, Math.max(0, lightness)) / 100;
+  const k = (n: number) => (n + ((hue % 360) + 360) / 30) % 12;
+  const a = s * Math.min(l, 1 - l);
+  const channel = (n: number) =>
+    Math.round(
+      255 * (l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)))),
+    );
+
+  return `#${[channel(0), channel(8), channel(4)]
+    .map((value) => value.toString(16).padStart(2, '0'))
+    .join('')}`.toUpperCase();
+}
+
 /** WCAG relative luminance. */
 function luminance(hex: string): number {
   const [red, green, blue] = toRgb(hex).map((channel) => {
@@ -83,4 +109,19 @@ export function contrastRatio(foreground: string, background: string): number {
   const darker = Math.min(luminance(foreground), luminance(background));
 
   return (lighter + 0.05) / (darker + 0.05);
+}
+
+/** Text on a brand surface is one of these two; whichever reads better wins. */
+const LIGHT_TEXT = '#FFFFFF';
+const DARK_TEXT = '#0B0B12';
+
+/**
+ * White or near-black on this colour, whichever has more contrast. Picked
+ * rather than authored so a theme cannot declare an unreadable pairing.
+ */
+export function readableTextOn(background: string): string {
+  return contrastRatio(LIGHT_TEXT, background) >=
+    contrastRatio(DARK_TEXT, background)
+    ? LIGHT_TEXT
+    : DARK_TEXT;
 }

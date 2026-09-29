@@ -8,6 +8,11 @@ theme is authored twice — once for light mode, once for dark — so a school's
 choice can never clash with the mode the viewer is in. A colour picker cannot
 make that promise, which is why there isn't one.
 
+A theme is the **whole palette**, not an accent. The page, the cards, the
+greys, the borders, the sidebar and the charts all take the school's hue, so a
+school on Emerald does not keep violet-tinted borders left over from somebody
+else's brand.
+
 ## Installing it
 
 The portals depend on this by git tag, not a registry:
@@ -48,9 +53,21 @@ the portal keeps its own theme.
 ## Adding a theme
 
 Add an entry to `SCHOOL_THEMES` with a `primary`, `surface` and `onSurface` for
-each mode. Everything else is derived, and the tests check that text on the
-brand colour and on the surface meets WCAG AA in both modes, so a theme that
-fails cannot ship.
+each mode. Those three anchors are all that is authored; `palette.ts` derives
+the other thirty-odd tokens from the hue of `primary`, so a theme cannot end up
+internally inconsistent.
+
+The tests check every foreground against its own surface — text on cards, on
+muted panels, on the sidebar, on each status colour — at WCAG AA, in both
+modes. A theme that fails cannot ship.
+
+Two things stay deliberate rather than derived:
+
+- **Status colours** keep their own hue. An error is red however the school is
+  branded, because a parent has to tell an error from a success at a glance.
+  Their lightness is set per mode so they sit correctly on that theme.
+- **Chart series** are five hues evenly spaced from the school's, so a chart is
+  recognisably theirs while the series stay distinguishable from each other.
 
 ## The HTTP call is not here
 

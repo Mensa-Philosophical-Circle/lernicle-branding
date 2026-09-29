@@ -35,6 +35,7 @@ export function applyTheme(
 
   if (!theme) {
     THEME_VARIABLE_NAMES.forEach((name) => root.style.removeProperty(name));
+    applyBrowserChrome(null);
 
     return false;
   }
@@ -46,7 +47,38 @@ export function applyTheme(
     root.style.setProperty(name, value);
   });
 
+  applyBrowserChrome(theme[mode].primary);
+
   return true;
+}
+
+/**
+ * The bar a phone browser draws around the page. It is the first thing a
+ * parent sees on a phone, and without this it stays the browser's own colour
+ * however the school is branded. It follows the mode with everything else.
+ */
+function applyBrowserChrome(color: string | null): void {
+  const doc = globalThis.document;
+  if (!doc) return;
+
+  const existing = doc.querySelector<HTMLMetaElement>(
+    'meta[name="theme-color"]',
+  );
+
+  if (!color) {
+    if (existing?.dataset.schoolThemeColor) existing.remove();
+
+    return;
+  }
+
+  const meta = existing ?? doc.createElement('meta');
+
+  if (!existing) {
+    meta.name = 'theme-color';
+    meta.dataset.schoolThemeColor = 'true';
+    doc.head.appendChild(meta);
+  }
+  meta.content = color;
 }
 
 /**
