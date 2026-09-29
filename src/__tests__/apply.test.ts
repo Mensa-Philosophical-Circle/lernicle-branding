@@ -164,6 +164,27 @@ describe('the tab', () => {
     expect(document.querySelector('link[data-school-favicon]')).toBeNull();
   });
 
+  // Without one, every school's tab showed the portal's development logo.
+  it('generates an icon from the school when it has not uploaded one', () => {
+    document.head.innerHTML = '<link rel="icon" type="image/svg+xml" href="/vite.svg">';
+
+    applyFavicon(null, { themeId: 'emerald', schoolName: "Abe Toluwani's School" });
+
+    const href = document.querySelector<HTMLLinkElement>('link[rel~="icon"]')!.href;
+
+    expect(href.startsWith('data:image/svg+xml')).toBe(true);
+    expect(decodeURIComponent(href)).toContain('>AT<');
+    expect(decodeURIComponent(href)).toContain(getTheme('emerald')!.light.primary);
+  });
+
+  it('prefers the uploaded icon over a generated one', () => {
+    applyFavicon('https://cdn.test/f.png', { themeId: 'emerald', schoolName: 'X' });
+
+    expect(
+      document.querySelector<HTMLLinkElement>('link[data-school-favicon]')!.href,
+    ).toBe('https://cdn.test/f.png');
+  });
+
   it('titles the tab with the school name, not its initials', () => {
     applyTitle("Abe Toluwani's School", 'Staff Portal');
     expect(document.title).toBe("Abe Toluwani's School | Staff Portal");

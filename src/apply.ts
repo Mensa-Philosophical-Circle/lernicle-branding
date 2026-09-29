@@ -1,3 +1,4 @@
+import { generatedFavicon, schoolInitials } from './assets';
 import { resolveTheme } from './themes';
 import { themeVariables } from './variables';
 import type { ColorFormat, ColorMode } from './types';
@@ -89,24 +90,36 @@ export function watchColorMode(
 }
 
 /**
- * Points the tab icon at the school's favicon.
+ * Points the tab icon at the school's favicon, or at one generated from its
+ * initials and theme colour when it has none.
  *
  * Every portal ships more than one `<link rel="icon">` — typically an SVG and
  * an .ico — and browsers pick between them by their own rules, often
  * preferring the SVG. Appending one more would simply lose that argument, so
- * the existing links are taken over as well, keeping their original href so
- * they can be handed back when the school has no favicon of its own.
+ * the existing links are taken over as well.
  */
-export function applyFavicon(url: string | null | undefined): void {
+export function applyFavicon(
+  url: string | null | undefined,
+  fallback?: { themeId: string | null | undefined; schoolName: string },
+): void {
   const doc = globalThis.document;
   if (!doc) return;
+
+  const href =
+    url ||
+    (fallback
+      ? generatedFavicon(
+          resolveTheme(fallback.themeId).light.primary,
+          schoolInitials(fallback.schoolName),
+        )
+      : null);
 
   const ours = doc.querySelector<HTMLLinkElement>('link[data-school-favicon]');
   const theirs = Array.from(
     doc.querySelectorAll<HTMLLinkElement>('link[rel~="icon"]'),
   ).filter((link) => !link.dataset.schoolFavicon);
 
-  if (!url) {
+  if (!href) {
     ours?.remove();
     theirs.forEach((link) => {
       const original = link.dataset.originalHref;
@@ -124,8 +137,8 @@ export function applyFavicon(url: string | null | undefined): void {
     if (link.dataset.originalHref === undefined) {
       link.dataset.originalHref = link.getAttribute('href') ?? '';
     }
-    link.href = url;
-    // An .ico announced as SVG is not drawn at all.
+    link.href = href;
+    // An icon announced with the wrong type is not drawn at all.
     link.removeAttribute('type');
   });
 
@@ -136,7 +149,7 @@ export function applyFavicon(url: string | null | undefined): void {
     link.dataset.schoolFavicon = 'true';
     doc.head.appendChild(link);
   }
-  link.href = url;
+  link.href = href;
 }
 
 export function applyTitle(schoolName: string, suffix?: string): void {

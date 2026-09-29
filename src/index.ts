@@ -26,7 +26,9 @@ export {
 } from './palette';
 
 export {
+  generatedFavicon,
   normalizeBrandingAssets,
+  schoolInitials,
   readCachedBranding,
   resolveBrandAssetUrl,
   writeCachedBranding,

@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 
 import { contrastRatio, normalizeHex, toHslTriplet, toRgb } from '../color';
 import {
+  generatedFavicon,
   normalizeBrandingAssets,
+  schoolInitials,
   readCachedBranding,
   resolveBrandAssetUrl,
   writeCachedBranding,
@@ -123,5 +125,28 @@ describe('the branding cache', () => {
     sessionStorage.setItem('school-branding', 'not json');
 
     expect(readCachedBranding()).toBeUndefined();
+  });
+});
+
+describe('a generated tab icon', () => {
+  it('takes up to two initials from the school name', () => {
+    expect(schoolInitials("Abe Toluwani's School")).toBe('AT');
+    expect(schoolInitials('Greenwood')).toBe('G');
+    expect(schoolInitials('  st. mary  academy ')).toBe('SM');
+    expect(schoolInitials('')).toBe('S');
+  });
+
+  it('is a self-contained SVG in the theme colour', () => {
+    const icon = decodeURIComponent(generatedFavicon('#047857', 'AT'));
+
+    expect(icon).toContain('fill="#047857"');
+    expect(icon).toContain('>AT<');
+  });
+
+  // The label comes from a school name somebody typed.
+  it('cannot be broken out of by a name with markup in it', () => {
+    const icon = decodeURIComponent(generatedFavicon('#047857', '<s'));
+
+    expect(icon).not.toContain('<s<');
   });
 });
