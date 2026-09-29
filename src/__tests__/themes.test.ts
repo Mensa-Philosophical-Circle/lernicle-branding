@@ -155,11 +155,11 @@ describe('a theme is the whole palette', () => {
 
   it("gives the greys the school's own hue, not somebody else's", () => {
     const emerald = buildPalette(getTheme('emerald')!, 'light');
-    const rose = buildPalette(getTheme('rose')!, 'light');
+    const fuchsia = buildPalette(getTheme('fuchsia')!, 'light');
 
-    expect(emerald['--border']).not.toBe(rose['--border']);
-    expect(emerald['--muted']).not.toBe(rose['--muted']);
-    expect(emerald['--sidebar']).not.toBe(rose['--sidebar']);
+    expect(emerald['--border']).not.toBe(fuchsia['--border']);
+    expect(emerald['--muted']).not.toBe(fuchsia['--muted']);
+    expect(emerald['--sidebar']).not.toBe(fuchsia['--sidebar']);
   });
 
   // An error must still read as an error when the school's theme is amber.
@@ -179,11 +179,42 @@ describe('a theme is the whole palette', () => {
     });
   });
 
+  const hueGap = (a: number, b: number) => {
+    const distance = Math.abs(a - b) % 360;
+
+    return distance > 180 ? 360 - distance : distance;
+  };
+
   it('keeps an error red whichever theme the school picked', () => {
     SCHOOL_THEMES.forEach((theme) => {
-      const { h } = toHsl(buildPalette(theme, 'light')['--destructive']);
+      MODES.forEach((mode) => {
+        const { h } = toHsl(buildPalette(theme, mode)['--destructive']);
 
-      expect(h <= 15 || h >= 345, `${theme.id}`).toBe(true);
+        expect(h <= 15 || h >= 345, `${theme.id} ${mode} hue ${h}`).toBe(true);
+      });
+    });
+  });
+
+  // A red-branded school would otherwise get a delete button nearly the colour
+  // of its primary one.
+  it('keeps a delete button tellable from a primary one', () => {
+    SCHOOL_THEMES.forEach((theme) => {
+      MODES.forEach((mode) => {
+        const palette = buildPalette(theme, mode);
+        const gap = hueGap(
+          toHsl(palette['--primary']).h,
+          toHsl(palette['--destructive']).h,
+        );
+        const separation = contrastRatio(
+          palette['--primary'],
+          palette['--destructive'],
+        );
+
+        expect(
+          gap >= 30 || separation >= 1.6,
+          `${theme.id} ${mode}: gap ${gap}, contrast ${separation.toFixed(2)}`,
+        ).toBe(true);
+      });
     });
   });
 

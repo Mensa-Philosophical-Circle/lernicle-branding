@@ -1,4 +1,4 @@
-import { hslToHex, readableTextOn, toHsl } from './color';
+import { contrastRatio, hslToHex, readableTextOn, toHsl } from './color';
 import type { ColorMode, SchoolTheme } from './types';
 
 /**
@@ -56,6 +56,69 @@ const STATUS = {
   dark: { saturation: 68, lightness: 60 },
 } as const;
 
+/**
+ * Hues that still unmistakably read as red. Destructive moves to whichever is
+ * furthest from the school's own colour, but never leaves this band: an error
+ * that has drifted to orange is a worse problem than one close to the brand.
+ */
+const RED_HUES = [0, 352, 8] as const;
+
+/** Either a clearly different hue, or a clearly different lightness. */
+const MIN_HUE_GAP = 30;
+const MIN_CONTRAST_AGAINST_BRAND = 1.6;
+
+/** How far apart two hues are on the wheel, 0–180. */
+function hueGap(a: number, b: number): number {
+  const distance = Math.abs(a - b) % 360;
+
+  return distance > 180 ? 360 - distance : distance;
+}
+
+function tellsApartFrom(brand: string, candidate: string): boolean {
+  return (
+    hueGap(toHsl(brand).h, toHsl(candidate).h) >= MIN_HUE_GAP ||
+    contrastRatio(brand, candidate) >= MIN_CONTRAST_AGAINST_BRAND
+  );
+}
+
+/**
+ * The destructive colour, kept red but kept distinct from the school's own.
+ *
+ * A red-branded school would otherwise get a delete button nearly the same
+ * colour as its primary one. Hue is moved first, within the red band; if the
+ * brand is red enough that hue alone cannot separate them, lightness does the
+ * rest — darker on a light page, lighter on a dark one, so the difference
+ * reads either way.
+ */
+function destructiveFor(primary: string, mode: ColorMode): string {
+  const { saturation, lightness } = STATUS[mode];
+
+  // Plain red first. It only moves when the school's own colour is close
+  // enough that a delete button would not stand out.
+  for (const hue of RED_HUES) {
+    const candidate = hslToHex(hue, saturation, lightness);
+
+    if (tellsApartFrom(primary, candidate)) return candidate;
+  }
+
+  // Still too close: separate by lightness, but only a little. Pushed far
+  // enough to separate a red brand it stops looking like an error at all,
+  // which is why the catalogue keeps its own colours clear of red instead.
+  const brandHue = toHsl(primary).h;
+  const furthest = [...RED_HUES].sort(
+    (a, b) => hueGap(brandHue, b) - hueGap(brandHue, a),
+  )[0];
+  const step = mode === 'light' ? -5 : 5;
+
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    const candidate = hslToHex(furthest, saturation, lightness + step * attempt);
+
+    if (tellsApartFrom(primary, candidate)) return candidate;
+  }
+
+  return hslToHex(furthest, saturation, lightness + step * 2);
+}
+
 /** Five series, evenly spaced from the school's hue so they stay distinct. */
 const CHART_STEP = 72;
 const CHART = {
@@ -88,6 +151,8 @@ export function buildPalette(theme: SchoolTheme, mode: ColorMode) {
     return hslToHex(hueForStatus, saturation, lightness);
   };
 
+  const destructive = destructiveFor(anchors.primary, mode);
+
   const chart = (index: number) => {
     const { saturation, lightness } = CHART[mode];
 
@@ -115,8 +180,8 @@ export function buildPalette(theme: SchoolTheme, mode: ColorMode) {
     '--input': border,
     '--ring': anchors.primary,
 
-    '--destructive': status(STATUS_HUES.destructive),
-    '--destructive-foreground': readableTextOn(status(STATUS_HUES.destructive)),
+    '--destructive': destructive,
+    '--destructive-foreground': readableTextOn(destructive),
     '--success': status(STATUS_HUES.success),
     '--success-foreground': readableTextOn(status(STATUS_HUES.success)),
     '--warning': status(STATUS_HUES.warning),

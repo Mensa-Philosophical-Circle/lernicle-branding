@@ -51,10 +51,10 @@ export const SCHOOL_THEMES: readonly SchoolTheme[] = [
     dark: { primary: '#FBBF24', surface: '#451A03', onSurface: '#FDE68A' },
   },
   {
-    id: 'rose',
-    name: 'Rose',
-    light: { primary: '#BE123C', surface: '#FFF1F2', onSurface: '#9F1239' },
-    dark: { primary: '#FB7185', surface: '#4C0519', onSurface: '#FECDD3' },
+    id: 'fuchsia',
+    name: 'Fuchsia',
+    light: { primary: '#A21CAF', surface: '#FDF4FF', onSurface: '#86198F' },
+    dark: { primary: '#E879F9', surface: '#4A044E', onSurface: '#F5D0FE' },
   },
   {
     id: 'slate',

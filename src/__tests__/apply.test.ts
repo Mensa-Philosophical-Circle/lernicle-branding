@@ -73,8 +73,8 @@ describe('applying a theme', () => {
 
 describe('following the viewer between light and dark', () => {
   it('repaints when the page switches mode', async () => {
-    applyTheme('rose', { colorFormat: 'hex' });
-    const stop = watchColorMode('rose', { colorFormat: 'hex' });
+    applyTheme('fuchsia', { colorFormat: 'hex' });
+    const stop = watchColorMode('fuchsia', { colorFormat: 'hex' });
     const before = root().style.getPropertyValue('--primary');
 
     root().classList.add('dark');
@@ -85,10 +85,10 @@ describe('following the viewer between light and dark', () => {
   });
 
   it('stops watching when told to', async () => {
-    const stop = watchColorMode('rose', { colorFormat: 'hex' });
+    const stop = watchColorMode('fuchsia', { colorFormat: 'hex' });
 
     stop();
-    applyTheme('rose', { colorFormat: 'hex', mode: 'light' });
+    applyTheme('fuchsia', { colorFormat: 'hex', mode: 'light' });
     const before = root().style.getPropertyValue('--primary');
 
     root().classList.add('dark');

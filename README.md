@@ -65,7 +65,12 @@ Two things stay deliberate rather than derived:
 
 - **Status colours** keep their own hue. An error is red however the school is
   branded, because a parent has to tell an error from a success at a glance.
-  Their lightness is set per mode so they sit correctly on that theme.
+  Their lightness is set per mode so they sit correctly on that theme. If a
+  school's own colour sits close to red, the error colour shifts within the red
+  band so a delete button still stands out from a primary one — but never far
+  enough to stop looking like an error. That is also why no theme in the
+  catalogue is red itself: separating them afterwards can only be done by
+  dragging the error colour out of red.
 - **Chart series** are five hues evenly spaced from the school's, so a chart is
   recognisably theirs while the series stay distinguishable from each other.
 
