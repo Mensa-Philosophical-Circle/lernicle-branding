@@ -99,26 +99,45 @@ describe('following the viewer between light and dark', () => {
 });
 
 describe('the tab', () => {
-  it("adds a favicon without touching the app's own", () => {
-    const own = document.createElement('link');
-
-    own.rel = 'icon';
-    own.href = '/favicon.ico';
-    document.head.appendChild(own);
+  // Every portal ships an SVG icon link and an .ico one, and browsers pick
+  // between them by their own rules — often preferring the SVG. Adding a third
+  // link would simply lose that argument, so the others are taken over too.
+  it('takes over the icon links the page already has', () => {
+    document.head.innerHTML =
+      '<link rel="icon" type="image/svg+xml" href="/vite.svg">' +
+      '<link rel="icon" href="/favicon.ico">';
 
     applyFavicon('https://cdn.test/school.png');
 
-    expect(
-      document.querySelector<HTMLLinkElement>('link[data-school-favicon]')?.href,
-    ).toBe('https://cdn.test/school.png');
-    expect(own.href).toContain('/favicon.ico');
+    document
+      .querySelectorAll<HTMLLinkElement>('link[rel~="icon"]')
+      .forEach((link) => {
+        expect(link.href).toBe('https://cdn.test/school.png');
+      });
   });
 
-  it('replaces the school favicon rather than stacking them up', () => {
-    applyFavicon('https://cdn.test/one.png');
-    applyFavicon('https://cdn.test/two.png');
+  // An .ico still announced as image/svg+xml is not drawn at all.
+  it('drops a type that would misdescribe the school favicon', () => {
+    document.head.innerHTML =
+      '<link rel="icon" type="image/svg+xml" href="/vite.svg">';
 
-    expect(document.querySelectorAll('link[data-school-favicon]')).toHaveLength(1);
+    applyFavicon('https://cdn.test/school.ico');
+
+    expect(
+      document.querySelector('link[href$="school.ico"]')?.hasAttribute('type'),
+    ).toBe(false);
+  });
+
+  it('hands the page its own icons back when the school has none', () => {
+    document.head.innerHTML = '<link rel="icon" href="/favicon.ico">';
+
+    applyFavicon('https://cdn.test/school.png');
+    applyFavicon(null);
+
+    expect(
+      document.querySelector<HTMLLinkElement>('link[rel~="icon"]')?.href,
+    ).toContain('/favicon.ico');
+    expect(document.querySelector('link[data-school-favicon]')).toBeNull();
   });
 
   it('removes the school favicon when there is none', () => {

@@ -73,24 +73,50 @@ export function watchColorMode(
   return () => observer.disconnect();
 }
 
-/** Swaps the tab icon, leaving the app's own `<link rel="icon">` untouched. */
+/**
+ * Points the tab icon at the school's favicon.
+ *
+ * Every portal ships more than one `<link rel="icon">` — typically an SVG and
+ * an .ico — and browsers pick between them by their own rules, often
+ * preferring the SVG. Appending one more would simply lose that argument, so
+ * the existing links are taken over as well, keeping their original href so
+ * they can be handed back when the school has no favicon of its own.
+ */
 export function applyFavicon(url: string | null | undefined): void {
   const doc = globalThis.document;
   if (!doc) return;
 
-  const existing = doc.querySelector<HTMLLinkElement>(
-    'link[data-school-favicon]',
-  );
+  const ours = doc.querySelector<HTMLLinkElement>('link[data-school-favicon]');
+  const theirs = Array.from(
+    doc.querySelectorAll<HTMLLinkElement>('link[rel~="icon"]'),
+  ).filter((link) => !link.dataset.schoolFavicon);
 
   if (!url) {
-    existing?.remove();
+    ours?.remove();
+    theirs.forEach((link) => {
+      const original = link.dataset.originalHref;
+
+      if (original !== undefined) {
+        link.href = original;
+        delete link.dataset.originalHref;
+      }
+    });
 
     return;
   }
 
-  const link = existing ?? doc.createElement('link');
+  theirs.forEach((link) => {
+    if (link.dataset.originalHref === undefined) {
+      link.dataset.originalHref = link.getAttribute('href') ?? '';
+    }
+    link.href = url;
+    // An .ico announced as SVG is not drawn at all.
+    link.removeAttribute('type');
+  });
 
-  if (!existing) {
+  const link = ours ?? doc.createElement('link');
+
+  if (!ours) {
     link.rel = 'icon';
     link.dataset.schoolFavicon = 'true';
     doc.head.appendChild(link);
