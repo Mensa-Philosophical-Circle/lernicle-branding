@@ -125,3 +125,17 @@ export function readableTextOn(background: string): string {
     ? LIGHT_TEXT
     : DARK_TEXT;
 }
+
+/** `top` at `alpha` opacity laid over `under`, as the browser composites it. */
+export function mix(top: string, alpha: number, under: string): string {
+  const [a, b] = [toRgb(top), toRgb(under)];
+
+  return `#${a
+    .map((value, i) =>
+      Math.round(value * alpha + b[i] * (1 - alpha))
+        .toString(16)
+        .padStart(2, '0'),
+    )
+    .join('')
+    .toUpperCase()}`;
+}

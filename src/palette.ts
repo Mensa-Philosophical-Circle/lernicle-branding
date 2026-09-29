@@ -1,4 +1,4 @@
-import { contrastRatio, hslToHex, readableTextOn, toHsl } from './color';
+import { contrastRatio, hslToHex, mix, readableTextOn, toHsl } from './color';
 import type { ColorMode, SchoolTheme } from './types';
 
 /**
@@ -65,6 +65,11 @@ const RED_HUES = [0, 352, 8] as const;
 
 const AA = 4.5;
 
+/** The strongest tint a status colour sits on as text: `bg-success/20`. */
+export const STATUS_TINT = 0.2;
+/** The faintest a status fill fades to under its text: `hover:bg-success/80`. */
+export const STATUS_FADE = 0.8;
+
 /**
  * A status colour is used two ways: as a fill with text on it (a badge, a
  * button) and as text itself on the page ("Paid", "Overdue"). The second is
@@ -83,8 +88,19 @@ function readableStatus(
 
   for (let lightness = startLightness; lightness >= 15 && lightness <= 90; lightness += step) {
     const candidate = hslToHex(hue, saturation, lightness);
-    const readsOnPage = surfaces.every((surface) => contrastRatio(candidate, surface) >= AA);
-    const carriesText = contrastRatio(readableTextOn(candidate), candidate) >= AA;
+    const onText = readableTextOn(candidate);
+    // Checked where it is really used, not only on a bare page: as text on its
+    // own pale tint (a "Paid" pill), and as a fill faded for hover.
+    const readsOnPage = surfaces.every(
+      (surface) =>
+        contrastRatio(candidate, surface) >= AA &&
+        contrastRatio(candidate, mix(candidate, STATUS_TINT, surface)) >= AA,
+    );
+    const carriesText = surfaces.every(
+      (surface) =>
+        contrastRatio(onText, candidate) >= AA &&
+        contrastRatio(onText, mix(candidate, STATUS_FADE, surface)) >= AA,
+    );
 
     if (readsOnPage && carriesText) return candidate;
   }

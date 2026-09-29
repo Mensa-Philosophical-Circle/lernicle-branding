@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { contrastRatio, readableTextOn, toHsl } from '../color';
-import { buildPalette } from '../palette';
+import { contrastRatio, mix, readableTextOn, toHsl } from '../color';
+import { STATUS_FADE, STATUS_TINT, buildPalette } from '../palette';
 import {
   DEFAULT_THEME_ID,
   SCHOOL_THEMES,
@@ -167,38 +167,51 @@ describe('a theme is the whole palette', () => {
     });
   });
 
-  // Buttons fade on hover (`hover:bg-primary/90`, `/80` for secondary), which
-  // pulls the fill towards the page behind it. In light mode that lightens it
-  // under white text, so a fill that passes at rest could fail under the pointer.
-  it('keeps button text readable while hovered, in both modes', () => {
-    const blend = (top: string, alpha: number, under: string) => {
-      const channels = (hex: string) =>
-        [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
-      const [a, b] = [channels(top), channels(under)];
-
-      return `#${a
-        .map((v, i) => Math.round(v * alpha + b[i] * (1 - alpha)).toString(16).padStart(2, '0'))
-        .join('')}`;
-    };
-    const HOVERS = [
-      ['--primary-foreground', '--primary', 0.9],
-      ['--destructive-foreground', '--destructive', 0.9],
-      ['--secondary-foreground', '--secondary', 0.8],
+  // Colours are rarely used bare. Buttons fade on hover (`hover:bg-success/80`)
+  // and labels sit on their own pale tint (`text-success bg-success/10`), which
+  // pulls each towards the page. Status colours are derived, so they are held
+  // to the strongest of those; the brand colour is the school's choice, so the
+  // portals keep to fades of 90% and tints of 10% for it.
+  it('keeps colours readable when faded for hover or used on their own tint', () => {
+    const USES = [
+      ['primary', 0.9, 0.1],
+      ['destructive', STATUS_FADE, STATUS_TINT],
+      ['success', STATUS_FADE, STATUS_TINT],
+      ['warning', STATUS_FADE, STATUS_TINT],
+      ['info', STATUS_FADE, STATUS_TINT],
     ] as const;
 
     SCHOOL_THEMES.forEach((theme) => {
       MODES.forEach((mode) => {
-        const palette = buildPalette(theme, mode);
+        const palette = buildPalette(theme, mode) as Record<string, string>;
 
-        HOVERS.forEach(([fg, bg, alpha]) => {
+        USES.forEach(([name, fade, tint]) => {
+          const fill = palette[`--${name}`];
+          const onFill = palette[`--${name}-foreground`];
+
           (['--background', '--card'] as const).forEach((surface) => {
-            const hovered = blend(palette[bg], alpha, palette[surface]);
+            const under = palette[surface];
 
             expect(
-              contrastRatio(palette[fg], hovered),
-              `${theme.id} ${mode} ${fg} on hovered ${bg} over ${surface}`,
+              contrastRatio(onFill, mix(fill, fade, under)),
+              `${theme.id} ${mode} text on ${name} faded to ${fade} over ${surface}`,
+            ).toBeGreaterThanOrEqual(AA);
+            expect(
+              contrastRatio(fill, mix(fill, tint, under)),
+              `${theme.id} ${mode} ${name} on its ${tint} tint over ${surface}`,
             ).toBeGreaterThanOrEqual(AA);
           });
+        });
+
+        // Secondary buttons fade to 80% on hover.
+        (['--background', '--card'] as const).forEach((surface) => {
+          expect(
+            contrastRatio(
+              palette['--secondary-foreground'],
+              mix(palette['--secondary'], 0.8, palette[surface]),
+            ),
+            `${theme.id} ${mode} secondary hover over ${surface}`,
+          ).toBeGreaterThanOrEqual(AA);
         });
       });
     });
