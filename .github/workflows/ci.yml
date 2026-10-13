@@ -18,3 +18,29 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+
+  # Portals install this package by git tag. Once CI passes on production,
+  # tag the version in package.json (v0.12.0, ...) unless it is tagged
+  # already, so a release is just: bump the version, merge.
+  release:
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/production'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Tag the version if it is new
+        run: |
+          TAG="v$(node -p "require('./package.json').version")"
+          if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+            echo "$TAG already exists; nothing to release."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG" -m "$TAG"
+          git push origin "$TAG"
+          echo "Tagged $TAG"
