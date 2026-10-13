@@ -16,6 +16,18 @@ import type { ColorMode } from '../types';
 const MODES: ColorMode[] = ['light', 'dark'];
 /** WCAG AA for body text. */
 const AA = 4.5;
+/** WCAG AA for large text and interface parts (icons, borders, focus). */
+const AA_LARGE = 3;
+
+/**
+ * In dark mode the brand colour carries white text, as a button should. White
+ * text at AA needs a colour dark enough that, used as text on the near-black
+ * page (links, icons, active items), it can't also reach 4.5:1: no colour does
+ * both. Readable button text wins; brand-coloured text there is held to the
+ * large-text/interface minimum instead.
+ */
+const brandTextMinimum = (token: string, mode: ColorMode) =>
+  token === '--primary' && mode === 'dark' ? AA_LARGE : AA;
 const HEX = /^#[0-9A-F]{6}$/;
 
 describe('the school theme catalogue', () => {
@@ -124,6 +136,16 @@ describe('theme variables', () => {
     expect(variables['--primary']).not.toContain('#');
   });
 
+  // The brand button is the most-seen control; in dark mode it carries white.
+  it('puts white text on the brand colour in dark mode', () => {
+    SCHOOL_THEMES.forEach((theme) => {
+      const { primary } = theme.dark;
+
+      expect(readableTextOn(primary), `${theme.id} on ${primary}`).toBe('#FFFFFF');
+      expect(contrastRatio('#FFFFFF', primary), theme.id).toBeGreaterThanOrEqual(AA);
+    });
+  });
+
   it('picks the readable text colour rather than trusting the author', () => {
     expect(readableTextOn('#0B0B12')).toBe('#FFFFFF');
     expect(readableTextOn('#FBBF24')).toBe('#0B0B12');
@@ -199,7 +221,7 @@ describe('a theme is the whole palette', () => {
             expect(
               contrastRatio(fill, mix(fill, tint, under)),
               `${theme.id} ${mode} ${name} on its ${tint} tint over ${surface}`,
-            ).toBeGreaterThanOrEqual(AA);
+            ).toBeGreaterThanOrEqual(brandTextMinimum(`--${name}`, mode));
           });
         });
 
@@ -231,7 +253,7 @@ describe('a theme is the whole palette', () => {
               expect(
                 contrastRatio(palette[token], palette[surface]),
                 `${theme.id} ${mode} ${token} on ${surface}`,
-              ).toBeGreaterThanOrEqual(AA);
+              ).toBeGreaterThanOrEqual(brandTextMinimum(token, mode));
             });
           },
         );
