@@ -26,7 +26,9 @@ portals build in Docker, so a registry would mean plumbing a secret into every
 Docker build. A public repo and a tag need none. npm builds the package on
 install, via the `prepare` script.
 
-To release a change: bump the version, tag it, and bump the tag in each portal.
+To release a change: bump the version in `package.json` and merge to
+`production`. Once CI passes, it tags that version (`v0.12.0`, ...) by itself.
+Then bump the tag in each portal.
 
 ## Using it
 
