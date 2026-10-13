@@ -13,6 +13,7 @@ export {
   applyTheme,
   applyTitle,
   currentColorMode,
+  pageTitleFromPath,
   watchColorMode,
   type ApplyThemeOptions,
 } from './apply';
