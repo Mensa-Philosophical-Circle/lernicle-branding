@@ -152,9 +152,36 @@ export function applyFavicon(
   link.href = href;
 }
 
-export function applyTitle(schoolName: string, suffix?: string): void {
+/**
+ * Titles the tab "Page | School". The page comes first: it is what tells
+ * tabs of the same portal apart, and a tab cut short still shows it.
+ */
+export function applyTitle(schoolName: string, page?: string): void {
   const doc = globalThis.document;
   if (!doc) return;
 
-  doc.title = suffix ? `${schoolName} | ${suffix}` : schoolName;
+  doc.title = page ? `${page} | ${schoolName}` : schoolName;
+}
+
+/** Ids in a path (uuids, numbers) name a record, not a page. */
+const ID_SEGMENT = /^([0-9a-f-]{16,}|\d+)$/i;
+
+/**
+ * The page's name from its path, for applyTitle: the last segment that
+ * isn't an id, in words ("/admin/report-cards/42" -> "Report Cards").
+ * The root is the dashboard.
+ */
+export function pageTitleFromPath(pathname: string): string {
+  const segment = pathname
+    .split('?')[0]
+    .split('/')
+    .filter((s) => s && !ID_SEGMENT.test(s))
+    .pop();
+  if (!segment) return 'Dashboard';
+
+  return decodeURIComponent(segment)
+    .split(/[-_]+/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
 }

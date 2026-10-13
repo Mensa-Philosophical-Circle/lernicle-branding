@@ -4,6 +4,7 @@ import {
   applyFavicon,
   applyTheme,
   applyTitle,
+  pageTitleFromPath,
   currentColorMode,
   watchColorMode,
 } from '../apply';
@@ -185,11 +186,24 @@ describe('the tab', () => {
     ).toBe('https://cdn.test/f.png');
   });
 
-  it('titles the tab with the school name, not its initials', () => {
-    applyTitle("Abe Toluwani's School", 'Staff Portal');
-    expect(document.title).toBe("Abe Toluwani's School | Staff Portal");
+  it('titles the tab with the page first, then the school name', () => {
+    applyTitle("Abe Toluwani's School", 'Pupils');
+    expect(document.title).toBe("Pupils | Abe Toluwani's School");
 
     applyTitle("Abe Toluwani's School");
     expect(document.title).toBe("Abe Toluwani's School");
+  });
+});
+
+describe('pageTitleFromPath', () => {
+  it.each([
+    ['/', 'Dashboard'],
+    ['/dashboard', 'Dashboard'],
+    ['/admin/report-cards', 'Report Cards'],
+    ['/pupils/3f2a9c1e-1111-2222-3333-444455556666', 'Pupils'],
+    ['/classes/42/', 'Classes'],
+    ['/settings/school_branding?tab=logo', 'School Branding'],
+  ])('names %s as %s', (path, title) => {
+    expect(pageTitleFromPath(path)).toBe(title);
   });
 });

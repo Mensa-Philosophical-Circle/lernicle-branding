@@ -31,12 +31,19 @@ To release a change: bump the version, tag it, and bump the tag in each portal.
 ## Using it
 
 ```ts
-import { applyTheme, watchColorMode, applyFavicon, applyTitle } from '@lernicle/branding';
+import {
+  applyTheme,
+  watchColorMode,
+  applyFavicon,
+  applyTitle,
+  pageTitleFromPath,
+} from '@lernicle/branding';
 
 applyTheme(branding.themeId, { colorFormat: 'hsl-triplet' });
 const stop = watchColorMode(branding.themeId, { colorFormat: 'hsl-triplet' });
 applyFavicon(branding.faviconUrl);
-applyTitle(branding.schoolName, 'Staff Portal');
+// "Report Cards | Abe Toluwani's School": the page first, then the school.
+applyTitle(branding.schoolName, pageTitleFromPath(location.pathname));
 ```
 
 `colorFormat` must match how the portal's CSS reads its variables:
