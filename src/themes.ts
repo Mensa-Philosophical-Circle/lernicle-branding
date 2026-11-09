@@ -63,6 +63,12 @@ export const SCHOOL_THEMES: readonly SchoolTheme[] = [
     light: { primary: '#334155', surface: '#F8FAFC', onSurface: '#1E293B' },
     dark: { primary: '#627794', surface: '#0F172A', onSurface: '#E2E8F0' },
   },
+  {
+    id: 'sunny-recess',
+    name: 'Sunny Recess',
+    light: { primary: '#6D28D9', surface: '#FEF3C7', onSurface: '#78350F' },
+    dark: { primary: '#9238FF', surface: '#3F2A06', onSurface: '#FDE68A' },
+  },
 ];
 
 export type SchoolThemeId = (typeof SCHOOL_THEMES)[number]['id'];
