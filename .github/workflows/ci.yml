@@ -4,9 +4,19 @@ on:
   push:
     branches: [production]
   pull_request:
+    # "closed" starts a run that does no work: its only job is to cancel the
+    # run still going for that PR through the concurrency group below.
+    types: [opened, synchronize, reopened, closed]
+
+# One run per PR: a newer push or the PR closing replaces the run in progress.
+# Pushes to production have no PR, so each gets its own group.
+concurrency:
+  group: ci-pr-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
 
 jobs:
   test:
+    if: github.event.action != 'closed'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
